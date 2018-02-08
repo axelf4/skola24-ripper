@@ -18,28 +18,25 @@ import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-public class Main {
+public class TimetableParser {
 	private static final String URL_NAME = "https://web.skola24.se/timetable/timetable-viewer/data/render";
 	private static final String[] weekdays = {"Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag"};
-	static final Pattern timeRegex = Pattern.compile("^(\\d{1,2}):(\\d{2})$");
-	static final Predicate<String> notTime = timeRegex.asPredicate().negate();
+	private static final Pattern timeRegex = Pattern.compile("^(\\d{1,2}):(\\d{2})$");
+	private static final Predicate<String> notTime = timeRegex.asPredicate().negate();
 
-	public static void main(String[] args) throws IOException {
+	public static String getICalendarString(String signature) throws IOException {
 		Calendar calendar = Calendar.getInstance();
 		List<VEvent> events = new ArrayList<>();
 		for (int week = calendar.get(Calendar.WEEK_OF_YEAR), i = 0; i < 3; week = (week + 1) % 52, ++i) {
 			System.out.println("---- Week " + week + " -----");
-			JSONObject data = getJsonData(week);
+			JSONObject data = getJsonData(signature, week);
 			List<Lesson> lessons = parseLessons(data);
 			events.addAll(getEventsFromLessons(lessons, week));
 		}
-		String calString = genICalendarFromEvents(events);
-		try (PrintStream ps = new PrintStream(new FileOutputStream("cal.ics"))) {
-			ps.print(calString);
-		}
+		return genICalendarFromEvents(events);
 	}
 
-	private static JSONObject getJsonData(int week) throws IOException {
+	private static JSONObject getJsonData(String signature, int week) throws IOException {
 		URL url = new URL(URL_NAME);
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 		con.setDoInput(true);
@@ -67,7 +64,7 @@ public class Main {
 		// param.put("selectedClass", selectedClass);
 
 		JSONObject selectedSignatures = new JSONObject();
-		selectedSignatures.put("signature", "990811-6073");
+		selectedSignatures.put("signature", signature);
 		param.put("selectedSignatures", selectedSignatures);
 
 		try (OutputStream os = con.getOutputStream()) {
