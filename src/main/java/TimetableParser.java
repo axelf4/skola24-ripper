@@ -1,6 +1,7 @@
 import biweekly.Biweekly;
 import biweekly.ICalendar;
 import biweekly.component.VEvent;
+import biweekly.io.TimezoneAssignment;
 import biweekly.property.Color;
 import biweekly.property.Summary;
 import org.json.JSONArray;
@@ -116,6 +117,8 @@ public class TimetableParser {
 
 	private static String genICalendarFromEvents(List<VEvent> events) {
 		ICalendar ical = new ICalendar();
+		TimezoneAssignment timeZone = TimezoneAssignment.download(TimeZone.getTimeZone("Europe/Stockholm"), false);
+		ical.getTimezoneInfo().setDefaultTimezone(timeZone);
 		events.forEach(ical::addEvent);
 		return Biweekly.write(ical).go();
 	}
